@@ -5,7 +5,10 @@ import org.springframework.stereotype.Repository;
 
 import com.devsu.banking_api.model.entity.Cliente;
 
+
 @Repository
 public interface ClienteRepository extends JpaRepository<Cliente, Long>{
-
+	
+	boolean existsByIdentificacion(String identificacion);
+	
 }

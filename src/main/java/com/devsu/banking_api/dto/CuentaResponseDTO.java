@@ -6,13 +6,14 @@ import java.util.List;
 import lombok.Data;
 
 @Data
-public class CuentaDTO {
+public class CuentaResponseDTO {
 
 	private String numeroCuenta;
 	private String tipoCuenta;
 	private BigDecimal saldoInicial;
+	private BigDecimal saldofinal;
 	private Boolean estado;
-	private Long clienteId;
-	
+	private String nombreCliente;
 	private List<MovimientoDTO> movimientos;
+	
 }

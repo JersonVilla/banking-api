@@ -6,9 +6,9 @@ import com.devsu.banking_api.dto.ClienteDTO;
 
 public interface IClienteService {
 
-	ClienteDTO crear(ClienteDTO request);
+	ClienteDTO crear(ClienteDTO dto);
 	
-	ClienteDTO actualizar(Long id, ClienteDTO request);
+	ClienteDTO actualizar(Long id, ClienteDTO dto);
 	
 	void eliminar(Long id);
 	

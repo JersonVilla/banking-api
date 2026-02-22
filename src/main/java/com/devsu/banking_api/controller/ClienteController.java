@@ -16,7 +16,8 @@ import com.devsu.banking_api.dto.ClienteDTO;
 import com.devsu.banking_api.service.IClienteService;
 
 import lombok.RequiredArgsConstructor;
-
+import lombok.extern.slf4j.Slf4j;
+@Slf4j
 @RestController
 @RequestMapping("/clientes")
 @RequiredArgsConstructor
@@ -26,22 +27,26 @@ public class ClienteController {
 	
 	@GetMapping
 	public ResponseEntity<List<ClienteDTO>> listar() {
+		log.info("Solicitud GET /clientes");
 		return ResponseEntity.ok(clienteService.listar());
 	}
 	
 	@GetMapping("/{id}")
 	public ResponseEntity<ClienteDTO> obtenerPorId(@PathVariable Long id) {
+		log.info("Solicitud GET /clientes/{}", id);
 		return ResponseEntity.ok(clienteService.obtenerPorId(id));
 	}
 	
 	@PostMapping
 	public ResponseEntity<ClienteDTO> crear(@RequestBody ClienteDTO dto) {
+		log.info("Solicitud POST /clientes");
 		return ResponseEntity.status(HttpStatus.CREATED)
 				.body(clienteService.crear(dto));
 	}
 	
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> eliminar(@PathVariable Long id){
+		log.info("Solicitud DELETE /clientes/{}", id);
 		clienteService.eliminar(id);
 		return ResponseEntity.noContent().build();
 	}

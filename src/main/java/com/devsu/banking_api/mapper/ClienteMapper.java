@@ -5,7 +5,7 @@ import org.mapstruct.Mapper;
 import com.devsu.banking_api.dto.ClienteDTO;
 import com.devsu.banking_api.model.entity.Cliente;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {CuentaMapper.class})
 public interface ClienteMapper {
 
 	Cliente toEntity(ClienteDTO dto);
