@@ -2,6 +2,7 @@ package com.devsu.banking_api.model.entity;
 
 import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
@@ -26,7 +27,7 @@ public class Cliente extends Persona{
 	@Column(nullable = false)
 	private Boolean estado;
 	
-	@OneToMany(mappedBy = "cliente")
+	@OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, orphanRemoval = true)
 	private List<Cuenta> cuentas;
 
 }

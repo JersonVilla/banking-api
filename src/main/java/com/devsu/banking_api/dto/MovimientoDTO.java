@@ -1,18 +1,20 @@
 package com.devsu.banking_api.dto;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class MovimientoDTO {
 
-	private Long id;
-    private String numeroCuenta;
-    private LocalDateTime fecha;
+	private String numeroCuenta;
     private String tipoMovimiento;
     private BigDecimal valor;
-    private BigDecimal saldo;
-	
+    
 }

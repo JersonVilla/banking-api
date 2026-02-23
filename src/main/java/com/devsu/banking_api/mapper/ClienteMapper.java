@@ -1,15 +1,20 @@
 package com.devsu.banking_api.mapper;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 import com.devsu.banking_api.dto.ClienteDTO;
+import com.devsu.banking_api.dto.ClienteResponseDTO;
 import com.devsu.banking_api.model.entity.Cliente;
 
 @Mapper(componentModel = "spring", uses = {CuentaMapper.class})
 public interface ClienteMapper {
 
+	@Mapping(target = "cuentas", ignore = true)
 	Cliente toEntity(ClienteDTO dto);
 	
 	ClienteDTO toDTO(Cliente cliente);
+	
+	ClienteResponseDTO toResponseDTO(Cliente cliente);
 	
 }

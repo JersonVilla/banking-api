@@ -34,7 +34,6 @@ public class Cuenta {
 	private String tipoCuenta;
 	@Column(nullable = false, name = "saldo_inicial")
 	private BigDecimal saldoInicial;
-	@Column(nullable = false, name = "saldo_actual")
 	private Boolean estado;
 	
 	@ManyToOne(fetch = FetchType.LAZY)

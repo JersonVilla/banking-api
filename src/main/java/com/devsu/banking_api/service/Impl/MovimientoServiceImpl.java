@@ -1,15 +1,16 @@
 package com.devsu.banking_api.service.Impl;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.mapstruct.Mapper;
 import org.springframework.stereotype.Service;
 
 import com.devsu.banking_api.dto.MovimientoDTO;
+import com.devsu.banking_api.dto.MovimientoResponseDTO;
+import com.devsu.banking_api.exception.BadRequestException;
+import com.devsu.banking_api.exception.NotFoundException;
 import com.devsu.banking_api.mapper.MovimientoMapper;
 import com.devsu.banking_api.model.entity.Cuenta;
 import com.devsu.banking_api.model.entity.Movimiento;
@@ -27,6 +28,14 @@ public class MovimientoServiceImpl implements ImovimientoService {
 	private final CuentaRepository cuentaRepository;
 	private final MovimientoMapper mapper;
 
+	private static final String DEPOSITO = "DEPOSITO";
+    private static final String RETIRO = "RETIRO";
+    
+    private static final String CUENTA_NO_ENCONTRADA = "Cuenta no encontrada";
+    private static final String TIPO_MOVIMIENTO_INVALIDO = "Tipo de movimiento inválido";
+    private static final String CUPO_DIARIO_EXCEDIDO = "Cupo diario excedido";
+    private static final String SALDO_NO_DISPONIBLE = "Saldo no disponible";
+    
     private static final BigDecimal LIMITE_DIARIO = BigDecimal.valueOf(1000);
 	
 	public MovimientoServiceImpl(MovimientoRepository movimientoRepository, CuentaRepository cuentaRepository, MovimientoMapper mapper) {
@@ -36,66 +45,25 @@ public class MovimientoServiceImpl implements ImovimientoService {
 	}
 
 	@Override
-	public MovimientoDTO crear(MovimientoDTO dto) {
-		log.info("Creando movimiento para cuenta: {}", dto.getNumeroCuenta());
+	public MovimientoResponseDTO crear(MovimientoDTO dto) {
+		log.info("Creando movimiento para cuenta {}", dto.getNumeroCuenta());
 
-        Cuenta cuenta = cuentaRepository.findById(dto.getNumeroCuenta())
-                .orElseThrow(() -> {
-                    log.error("Cuenta {} no encontrada", dto.getNumeroCuenta());
-                    return new RuntimeException("Cuenta no encontrada");
-                });
+		Cuenta cuenta = obtenerCuenta(dto.getNumeroCuenta());
 
-        BigDecimal saldoActual = cuenta.getSaldoInicial();
-        BigDecimal valorMovimiento = dto.getValor();
+		BigDecimal valorMovimiento = dto.getValor();
+        BigDecimal nuevoSaldo = calcularSaldo(cuenta, dto.getTipoMovimiento(), valorMovimiento);
 
-        log.error("verificando limites");
-        LocalDateTime inicioDia = LocalDate.now().atStartOfDay();
-        LocalDateTime finDia = LocalDate.now().atTime(23, 59, 59, 999_999_999);
-        List<Movimiento> movimientosHoy = movimientoRepository.findByCuentaAndFechaBetween(cuenta, inicioDia, finDia);
+        Movimiento movimiento = guardarMovimiento(cuenta, dto.getTipoMovimiento(), valorMovimiento, nuevoSaldo);
 
-        BigDecimal totalDebitosHoy = movimientosHoy.stream()
-                .filter(m -> "DEBITO".equalsIgnoreCase(m.getTipoMovimiento()))
-                .map(Movimiento::getValor)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        actualizarSaldoCuenta(cuenta, nuevoSaldo);
 
-        if ("DEBITO".equalsIgnoreCase(dto.getTipoMovimiento())) {
-            if (totalDebitosHoy.add(valorMovimiento).compareTo(LIMITE_DIARIO) > 0) {
-                log.error("Cupo diario excedido para la cuenta {}", cuenta.getNumeroCuenta());
-                throw new RuntimeException("Cupo diario Excedido");
-            }
-            if (saldoActual.compareTo(valorMovimiento) < 0) {
-                log.error("Saldo no disponible en la cuenta {}", cuenta.getNumeroCuenta());
-                throw new RuntimeException("Saldo no disponible");
-            }
-            saldoActual = saldoActual.subtract(valorMovimiento);
-        } else if ("CREDITO".equalsIgnoreCase(dto.getTipoMovimiento())) {
-            saldoActual = saldoActual.add(valorMovimiento);
-        } else {
-            log.error("Tipo de movimiento inválido: {}", dto.getTipoMovimiento());
-            throw new RuntimeException("Tipo de movimiento inválido");
-        }
-
-        Movimiento movimiento = new Movimiento();
-        movimiento.setCuenta(cuenta);
-        movimiento.setFecha(LocalDateTime.now());
-        movimiento.setTipoMovimiento(dto.getTipoMovimiento());
-        movimiento.setValor(valorMovimiento);
-        movimiento.setSaldo(saldoActual);
-        
-        cuenta.setSaldoInicial(saldoActual);
-        cuentaRepository.save(cuenta);
-
-        Movimiento guardado = movimientoRepository.save(movimiento);
-        log.info("Movimiento registrado con id: {}", guardado.getId());
-
-        return mapper.toDTO(guardado);
-	}
-
+	    return construirResponse(cuenta, movimiento, valorMovimiento, nuevoSaldo);
+    }
+    
 	@Override
-	public List<MovimientoDTO> listarMovimientosPorCuenta(String numeroCuenta) {
+	public List<MovimientoResponseDTO> listarMovimientosPorCuenta(String numeroCuenta) {
 		log.info("Listando movimientos de la cuenta: {}", numeroCuenta);
-        Cuenta cuenta = cuentaRepository.findById(numeroCuenta)
-                .orElseThrow(() -> new RuntimeException("Cuenta no encontrada"));
+        Cuenta cuenta = obtenerCuenta(numeroCuenta);
 
         return movimientoRepository.findByCuenta(cuenta)
                 .stream()
@@ -104,16 +72,69 @@ public class MovimientoServiceImpl implements ImovimientoService {
 	}
 
 	@Override
-	public List<MovimientoDTO> listarMovimientosPorCuentaYFecha(String numeroCuenta, LocalDateTime inicio,
+	public List<MovimientoResponseDTO> listarMovimientosPorCuentaYFecha(String numeroCuenta, LocalDateTime inicio,
 			LocalDateTime fin) {
 		log.info("Listando movimientos de la cuenta {} entre {} y {}", numeroCuenta, inicio, fin);
-        Cuenta cuenta = cuentaRepository.findById(numeroCuenta)
-                .orElseThrow(() -> new RuntimeException("Cuenta no encontrada"));
+        Cuenta cuenta = obtenerCuenta(numeroCuenta);
 
         return movimientoRepository.findByCuentaAndFechaBetween(cuenta, inicio, fin)
                 .stream()
                 .map(mapper::toDTO)
                 .collect(Collectors.toList());
 	}
+	
+	private Cuenta obtenerCuenta(String numeroCuenta) {
+        return cuentaRepository.findById(numeroCuenta)
+                .orElseThrow(() -> new NotFoundException(CUENTA_NO_ENCONTRADA));
+    }
+	
+	private BigDecimal calcularSaldo(Cuenta cuenta, String tipoMovimiento, BigDecimal valorMovimiento) {
+        if (DEPOSITO.equalsIgnoreCase(tipoMovimiento)) {
+            return cuenta.getSaldoInicial().add(valorMovimiento);
+        } else if (RETIRO.equalsIgnoreCase(tipoMovimiento)) {
+            validarRetiro(cuenta, valorMovimiento);
+            return cuenta.getSaldoInicial().subtract(valorMovimiento);
+        } else {
+            throw new BadRequestException(TIPO_MOVIMIENTO_INVALIDO);
+        }
+    }
+
+    private void validarRetiro(Cuenta cuenta, BigDecimal valorMovimiento) {
+        if (valorMovimiento.compareTo(LIMITE_DIARIO) > 0) {
+            throw new BadRequestException(CUPO_DIARIO_EXCEDIDO);
+        }
+        if (cuenta.getSaldoInicial().compareTo(valorMovimiento) < 0) {
+            throw new BadRequestException(SALDO_NO_DISPONIBLE);
+        }
+    }
+	
+    private Movimiento guardarMovimiento(Cuenta cuenta, String tipoMovimiento, BigDecimal valorMovimiento, BigDecimal nuevoSaldo) {
+        Movimiento movimiento = Movimiento.builder()
+                .cuenta(cuenta)
+                .tipoMovimiento(tipoMovimiento)
+                .valor(RETIRO.equalsIgnoreCase(tipoMovimiento) ? valorMovimiento.negate() : valorMovimiento)
+                .saldo(nuevoSaldo)
+                .fecha(LocalDateTime.now())
+                .build();
+        return movimientoRepository.save(movimiento);
+    }
+
+    private void actualizarSaldoCuenta(Cuenta cuenta, BigDecimal nuevoSaldo) {
+        cuenta.setSaldoInicial(nuevoSaldo);
+        cuentaRepository.save(cuenta);
+    }
+    
+    private MovimientoResponseDTO construirResponse(Cuenta cuenta, Movimiento movimiento, BigDecimal valorMovimiento, BigDecimal nuevoSaldo) {
+        return MovimientoResponseDTO.builder()
+                .fecha(movimiento.getFecha())
+                .cliente(cuenta.getCliente().getNombre())
+                .numeroCuenta(cuenta.getNumeroCuenta())
+                .tipoCuenta(cuenta.getTipoCuenta())
+                .saldoInicial(cuenta.getSaldoInicial())
+                .estado(cuenta.getEstado())
+                .movimiento(RETIRO.equalsIgnoreCase(movimiento.getTipoMovimiento()) ? valorMovimiento.negate() : valorMovimiento)
+                .saldoDisponible(nuevoSaldo)
+                .build();
+    }
 
 }

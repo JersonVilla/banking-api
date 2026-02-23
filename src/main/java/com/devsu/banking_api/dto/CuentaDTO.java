@@ -1,7 +1,6 @@
 package com.devsu.banking_api.dto;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 import lombok.Data;
 
@@ -14,5 +13,4 @@ public class CuentaDTO {
 	private Boolean estado;
 	private Long clienteId;
 	
-	private List<MovimientoDTO> movimientos;
 }

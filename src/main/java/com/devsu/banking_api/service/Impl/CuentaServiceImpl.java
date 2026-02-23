@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 
 import com.devsu.banking_api.dto.CuentaDTO;
 import com.devsu.banking_api.dto.CuentaResponseDTO;
+import com.devsu.banking_api.exception.BadRequestException;
+import com.devsu.banking_api.exception.NotFoundException;
 import com.devsu.banking_api.mapper.CuentaMapper;
 import com.devsu.banking_api.model.entity.Cliente;
 import com.devsu.banking_api.model.entity.Cuenta;
@@ -22,6 +24,10 @@ public class CuentaServiceImpl implements ICuentaService {
 	private final ClienteRepository clienteRepository;
 	private final CuentaMapper mapper;
 	
+	private static final String CUENTA_NO_ENCONTRADA = "Cuenta no encontrada";
+	private static final String CLIENTE_NO_ENCONTRADO = "Cliente no encontrado";
+	private static final String CUENTA_EXISTE = "La cuenta ya existe";
+	
 	public CuentaServiceImpl(CuentaRepository cuentaRepository, ClienteRepository clienteRepository,
 			CuentaMapper mapper) {
 		this.cuentaRepository = cuentaRepository;
@@ -31,11 +37,10 @@ public class CuentaServiceImpl implements ICuentaService {
 
 	@Override
 	public CuentaResponseDTO crear(CuentaDTO dto) {
-		Cliente cliente = clienteRepository.findById(dto.getClienteId())
-				.orElseThrow(() -> new RuntimeException("Cliente no encontrado"));
+		Cliente cliente = obtenerCliente(dto.getClienteId());
 		
 		if(cuentaRepository.existsById(dto.getNumeroCuenta())) {
-			throw new RuntimeException("La cuenta ya existe");
+			new BadRequestException(CUENTA_EXISTE);
 		}
 		
 		Cuenta cuenta = mapper.toEntity(dto);
@@ -48,8 +53,7 @@ public class CuentaServiceImpl implements ICuentaService {
 
 	@Override
 	public CuentaResponseDTO actualizar(String numeroCuenta, CuentaDTO dto) {
-		Cuenta cuenta = cuentaRepository.findById(numeroCuenta)
-				.orElseThrow(() -> new RuntimeException("Cuenta no encontrada"));
+		Cuenta cuenta = obtenerCuenta(numeroCuenta);
 		
 		cuenta.setTipoCuenta(dto.getTipoCuenta());
 		cuenta.setSaldoInicial(dto.getSaldoInicial());
@@ -61,9 +65,7 @@ public class CuentaServiceImpl implements ICuentaService {
 
 	@Override
 	public void eliminar(String numeroCuenta) {
-		if(!cuentaRepository.existsById(numeroCuenta)) {
-			throw new RuntimeException("Cuenta no encontrada");
-		}
+		obtenerCuenta(numeroCuenta);
 		cuentaRepository.deleteById(numeroCuenta);
 	}
 
@@ -76,9 +78,18 @@ public class CuentaServiceImpl implements ICuentaService {
 
 	@Override
 	public CuentaResponseDTO obtenerPorNumeroCuenta(String numeroCuenta) {
-		Cuenta cuenta = cuentaRepository.findById(numeroCuenta)
-				.orElseThrow(() -> new RuntimeException("Cuenta no encontrada"));
+		Cuenta cuenta = obtenerCuenta(numeroCuenta);
 		return mapper.toResponseDTO(cuenta);
 	}
+	
+	private Cliente obtenerCliente(Long idCliente) {
+        return clienteRepository.findById(idCliente)
+        		.orElseThrow(() -> new NotFoundException(CLIENTE_NO_ENCONTRADO));
+    }
+	
+	private Cuenta obtenerCuenta(String numeroCuenta) {
+        return cuentaRepository.findById(numeroCuenta)
+                .orElseThrow(() -> new NotFoundException(CUENTA_NO_ENCONTRADA));
+    }
 
 }

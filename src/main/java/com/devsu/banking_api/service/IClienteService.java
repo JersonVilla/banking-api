@@ -3,17 +3,18 @@ package com.devsu.banking_api.service;
 import java.util.List;
 
 import com.devsu.banking_api.dto.ClienteDTO;
+import com.devsu.banking_api.dto.ClienteResponseDTO;
 
 public interface IClienteService {
 
-	ClienteDTO crear(ClienteDTO dto);
+	ClienteResponseDTO crear(ClienteDTO dto);
 	
-	ClienteDTO actualizar(Long id, ClienteDTO dto);
+	ClienteResponseDTO actualizar(Long id, ClienteDTO dto);
 	
 	void eliminar(Long id);
 	
-	List<ClienteDTO> listar();
+	List<ClienteResponseDTO> listar();
 	
-	ClienteDTO obtenerPorId(Long id);
+	ClienteResponseDTO obtenerPorId(Long id);
 	
 }

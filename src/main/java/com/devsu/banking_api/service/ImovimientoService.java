@@ -4,13 +4,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.devsu.banking_api.dto.MovimientoDTO;
+import com.devsu.banking_api.dto.MovimientoResponseDTO;
 
 public interface ImovimientoService {
 
-	MovimientoDTO crear(MovimientoDTO movimiento);
+	MovimientoResponseDTO crear(MovimientoDTO movimiento);
 	
-	List<MovimientoDTO> listarMovimientosPorCuenta(String cuenta);
+	List<MovimientoResponseDTO> listarMovimientosPorCuenta(String cuenta);
 	
-	List<MovimientoDTO> listarMovimientosPorCuentaYFecha(String cuenta, LocalDateTime inicio, LocalDateTime fin);
+	List<MovimientoResponseDTO> listarMovimientosPorCuentaYFecha(String cuenta, LocalDateTime inicio, LocalDateTime fin);
 	
 }

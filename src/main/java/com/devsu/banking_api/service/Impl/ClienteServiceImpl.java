@@ -6,6 +6,9 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.devsu.banking_api.dto.ClienteDTO;
+import com.devsu.banking_api.dto.ClienteResponseDTO;
+import com.devsu.banking_api.exception.BadRequestException;
+import com.devsu.banking_api.exception.NotFoundException;
 import com.devsu.banking_api.mapper.ClienteMapper;
 import com.devsu.banking_api.model.entity.Cliente;
 import com.devsu.banking_api.model.repository.ClienteRepository;
@@ -20,34 +23,37 @@ public class ClienteServiceImpl implements IClienteService {
 	private final ClienteRepository clienteRepository;
 	private final ClienteMapper mapper;
 	
+	private static final String CLIENTE_NO_ENCONTRADO = "Cliente no encontrado";
+	private static final String CLIENTE_EXISTE = "El cliente ya se encuentra registrado";
+	
 	public ClienteServiceImpl(ClienteRepository clienteRepository, ClienteMapper mapper) {
 		this.clienteRepository = clienteRepository;
 		this.mapper = mapper;
 	}
 
 	@Override
-	public ClienteDTO crear(ClienteDTO dto) {
+	public ClienteResponseDTO crear(ClienteDTO dto) {
 		log.info("Creando cliente con identificación: {}", dto.getIdentificacion());
 
         if (clienteRepository.existsByIdentificacion(dto.getIdentificacion())) {
             log.error("El cliente con identificación {} ya existe", dto.getIdentificacion());
-            throw new RuntimeException("Cliente ya registrado");
+            throw new BadRequestException(CLIENTE_EXISTE);
         }
 
         Cliente cliente = mapper.toEntity(dto);
         Cliente guardado = clienteRepository.save(cliente);
         log.info("Cliente creado con id: {}", guardado.getId());
-        return mapper.toDTO(guardado);
+        return mapper.toResponseDTO(guardado);
 	}
 
 	@Override
-	public ClienteDTO actualizar(Long id, ClienteDTO dto) {
+	public ClienteResponseDTO actualizar(Long id, ClienteDTO dto) {
 		log.info("Actualizando cliente con id: {}", id);
 
         Cliente cliente = clienteRepository.findById(id)
                 .orElseThrow(() -> {
                     log.error("Cliente con id {} no encontrado", id);
-                    return new RuntimeException("Cliente no encontrado");
+                    return new NotFoundException(CLIENTE_NO_ENCONTRADO);
                 });
 
         cliente.setNombre(dto.getNombre());
@@ -60,7 +66,7 @@ public class ClienteServiceImpl implements IClienteService {
 
         Cliente actualizado = clienteRepository.save(cliente);
         log.info("Cliente actualizado con id: {}", actualizado.getId());
-        return mapper.toDTO(actualizado);
+        return mapper.toResponseDTO(actualizado);
 	}
 
 	@Override
@@ -68,30 +74,30 @@ public class ClienteServiceImpl implements IClienteService {
 		log.info("Eliminando cliente con id: {}", id);
         if (!clienteRepository.existsById(id)) {
             log.error("Cliente con id {} no encontrado", id);
-            throw new RuntimeException("Cliente no encontrado");
+            throw new NotFoundException(CLIENTE_NO_ENCONTRADO);
         }
         clienteRepository.deleteById(id);
         log.info("Cliente eliminado con id: {}", id);
 	}
 
 	@Override
-	public List<ClienteDTO> listar() {
+	public List<ClienteResponseDTO> listar() {
 		log.info("Listando todos los clientes");
         return clienteRepository.findAll()
                 .stream()
-                .map(mapper::toDTO)
+                .map(mapper::toResponseDTO)
                 .collect(Collectors.toList());
 	}
 
 	@Override
-	public ClienteDTO obtenerPorId(Long id) {
+	public ClienteResponseDTO obtenerPorId(Long id) {
 		log.info("Obteniendo cliente por id: {}", id);
         Cliente cliente = clienteRepository.findById(id)
                 .orElseThrow(() -> {
                     log.error("Cliente con id {} no encontrado", id);
-                    return new RuntimeException("Cliente no encontrado");
+                    return new NotFoundException(CLIENTE_NO_ENCONTRADO);
                 });
-        return mapper.toDTO(cliente);
+        return mapper.toResponseDTO(cliente);
 	}
 
 	

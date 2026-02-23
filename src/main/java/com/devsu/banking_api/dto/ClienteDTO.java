@@ -1,7 +1,5 @@
 package com.devsu.banking_api.dto;
 
-import java.util.List;
-
 import lombok.Data;
 
 @Data
@@ -17,5 +15,4 @@ public class ClienteDTO {
 	private String contrasena;
 	private Boolean estado;
 	
-	private List<CuentaDTO> cuentas;
 }
