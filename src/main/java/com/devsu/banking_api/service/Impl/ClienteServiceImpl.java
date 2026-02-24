@@ -39,7 +39,7 @@ public class ClienteServiceImpl implements IClienteService {
             log.error("El cliente con identificación {} ya existe", dto.getIdentificacion());
             throw new BadRequestException(CLIENTE_EXISTE);
         }
-
+        
         Cliente cliente = mapper.toEntity(dto);
         Cliente guardado = clienteRepository.save(cliente);
         log.info("Cliente creado con id: {}", guardado.getId());
@@ -56,13 +56,20 @@ public class ClienteServiceImpl implements IClienteService {
                     return new NotFoundException(CLIENTE_NO_ENCONTRADO);
                 });
 
-        cliente.setNombre(dto.getNombre());
-        cliente.setGenero(dto.getGenero());
-        cliente.setEdad(dto.getEdad().toString());
-        cliente.setDireccion(dto.getDireccion());
-        cliente.setTelefono(dto.getTelefono());
-        cliente.setContrasena(dto.getContrasena());
-        cliente.setEstado(dto.getEstado());
+		cliente.setNombre(
+				(dto.getNombre() != null && !dto.getNombre().isBlank()) ? dto.getNombre() : cliente.getNombre());
+        cliente.setGenero(
+        		(dto.getGenero() != null && !dto.getGenero().isBlank()) ? dto.getGenero() : cliente.getGenero());
+        cliente.setEdad(
+        		(dto.getEdad() != null ? dto.getEdad().toString() : cliente.getEdad()));
+        cliente.setDireccion(
+        		(dto.getDireccion() != null && !dto.getDireccion().isBlank()) ? dto.getDireccion() : cliente.getDireccion());
+        cliente.setTelefono(
+        		(dto.getTelefono() != null && !dto.getTelefono().isBlank()) ? dto.getTelefono() : cliente.getTelefono());
+        cliente.setContrasena(
+        		(dto.getContrasena() != null && !dto.getContrasena().isBlank()) ? dto.getContrasena() : cliente.getContrasena());
+        cliente.setEstado(
+        		(dto.getEstado() != null) ? dto.getEstado() : cliente.getEstado());
 
         Cliente actualizado = clienteRepository.save(cliente);
         log.info("Cliente actualizado con id: {}", actualizado.getId());

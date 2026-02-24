@@ -18,5 +18,6 @@ public class MovimientoResponseDTO {
     private Boolean estado;
     private BigDecimal movimiento;
     private BigDecimal saldoDisponible;
+    private String tipoMovimiento;
 	
 }

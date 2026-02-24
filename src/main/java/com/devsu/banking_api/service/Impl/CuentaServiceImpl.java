@@ -25,6 +25,7 @@ public class CuentaServiceImpl implements ICuentaService {
 	private final CuentaMapper mapper;
 	
 	private static final String CUENTA_NO_ENCONTRADA = "Cuenta no encontrada";
+	private static final String CUENTA_CON_MOVIMIENTOS = "No se puede eliminar una cuenta con movimientos asociados";
 	private static final String CLIENTE_NO_ENCONTRADO = "Cliente no encontrado";
 	private static final String CUENTA_EXISTE = "La cuenta ya existe";
 	
@@ -65,8 +66,13 @@ public class CuentaServiceImpl implements ICuentaService {
 
 	@Override
 	public void eliminar(String numeroCuenta) {
-		obtenerCuenta(numeroCuenta);
-		cuentaRepository.deleteById(numeroCuenta);
+		Cuenta cuenta = obtenerCuenta(numeroCuenta);
+
+	    if (cuenta.getMovimientos() != null && !cuenta.getMovimientos().isEmpty()) {
+	        throw new BadRequestException(CUENTA_CON_MOVIMIENTOS);
+	    }
+
+	    cuentaRepository.delete(cuenta);
 	}
 
 	@Override

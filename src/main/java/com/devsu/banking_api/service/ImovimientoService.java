@@ -8,10 +8,30 @@ import com.devsu.banking_api.dto.MovimientoResponseDTO;
 
 public interface ImovimientoService {
 
+	/**
+	 * Crear movimiento
+	 * 
+	 * @param movimiento
+	 * @return MovimientoResponseDTO
+	 */
 	MovimientoResponseDTO crear(MovimientoDTO movimiento);
 	
+	/**
+	 * Listar movimientos
+	 * 
+	 * @param cuenta
+	 * @return List
+	 */
 	List<MovimientoResponseDTO> listarMovimientosPorCuenta(String cuenta);
 	
+	/**
+	 * Generar reporte de movimientos
+	 * 
+	 * @param cuenta
+	 * @param inicio
+	 * @param fin
+	 * @return List
+	 */
 	List<MovimientoResponseDTO> listarMovimientosPorCuentaYFecha(String cuenta, LocalDateTime inicio, LocalDateTime fin);
 	
 }
