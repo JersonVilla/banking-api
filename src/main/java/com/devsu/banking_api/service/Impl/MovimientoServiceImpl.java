@@ -59,6 +59,15 @@ public class MovimientoServiceImpl implements ImovimientoService {
 
 	    return construirResponse(cuenta, movimiento, valorMovimiento, nuevoSaldo);
     }
+	
+	@Override
+	public List<MovimientoResponseDTO> listar() {
+		log.info("Listando todos los clientes");
+        return movimientoRepository.findAll()
+                .stream()
+                .map(mapper::toDTO)
+                .collect(Collectors.toList());
+	}
     
 	@Override
 	public List<MovimientoResponseDTO> listarMovimientosPorCuenta(String numeroCuenta) {

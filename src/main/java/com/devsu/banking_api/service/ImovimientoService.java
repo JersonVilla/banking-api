@@ -17,6 +17,13 @@ public interface ImovimientoService {
 	MovimientoResponseDTO crear(MovimientoDTO movimiento);
 	
 	/**
+	 * Listar clientes
+	 * 
+	 * @return List
+	 */
+	List<MovimientoResponseDTO> listar();
+	
+	/**
 	 * Listar movimientos
 	 * 
 	 * @param cuenta

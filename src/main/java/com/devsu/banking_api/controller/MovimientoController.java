@@ -41,6 +41,12 @@ public class MovimientoController {
         return ResponseEntity.ok(movimientoService.crear(dto));
     }
 
+	@GetMapping
+    public ResponseEntity<List<MovimientoResponseDTO>> listar() {
+    	log.info("Solicitud GET /movimientos");
+        return ResponseEntity.ok(movimientoService.listar());
+    }
+	
     @GetMapping("/{numeroCuenta}")
     public ResponseEntity<List<MovimientoResponseDTO>> listarMovimientosPorCuenta(@PathVariable String numeroCuenta) {
         log.info("Solicitud GET /movimientos/{}", numeroCuenta);
