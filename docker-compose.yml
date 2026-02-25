@@ -1,0 +1,23 @@
+version: '3.9'
+
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: devsu_db
+      MYSQL_USER: devsu_user
+      MYSQL_PASSWORD: devsu_pass*
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+
+  api:
+    build: .
+    container_name: banking-api
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
