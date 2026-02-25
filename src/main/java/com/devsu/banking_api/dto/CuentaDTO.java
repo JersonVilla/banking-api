@@ -13,4 +13,8 @@ public class CuentaDTO {
 	private Boolean estado;
 	private Long clienteId;
 	
+	public CuentaDTO(String numeroCuenta) {
+		this.numeroCuenta = numeroCuenta;
+	}
+	
 }

@@ -12,5 +12,6 @@ public class CuentaResponseDTO {
 	private BigDecimal saldoInicial;
 	private Boolean estado;
 	private String nombreCliente;
+	private Long clienteId;
 	
 }

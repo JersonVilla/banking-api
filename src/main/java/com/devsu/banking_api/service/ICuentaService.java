@@ -45,4 +45,10 @@ public interface ICuentaService {
 	 */
 	CuentaResponseDTO obtenerPorNumeroCuenta(String numeroCuenta);
 	
+	/**
+	 * Listar cuentas activas
+	 * 
+	 * @return List
+	 */
+	List<CuentaDTO> getCuentasActivas();
 }

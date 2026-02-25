@@ -1,10 +1,12 @@
 package com.devsu.banking_api.service.Impl;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.devsu.banking_api.dto.ClienteBasicDTO;
 import com.devsu.banking_api.dto.ClienteDTO;
 import com.devsu.banking_api.dto.ClienteResponseDTO;
 import com.devsu.banking_api.exception.BadRequestException;
@@ -14,10 +16,12 @@ import com.devsu.banking_api.model.entity.Cliente;
 import com.devsu.banking_api.model.repository.ClienteRepository;
 import com.devsu.banking_api.service.IClienteService;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class ClienteServiceImpl implements IClienteService {
 	
 	private final ClienteRepository clienteRepository;
@@ -25,11 +29,6 @@ public class ClienteServiceImpl implements IClienteService {
 	
 	private static final String CLIENTE_NO_ENCONTRADO = "Cliente no encontrado";
 	private static final String CLIENTE_EXISTE = "El cliente ya se encuentra registrado";
-	
-	public ClienteServiceImpl(ClienteRepository clienteRepository, ClienteMapper mapper) {
-		this.clienteRepository = clienteRepository;
-		this.mapper = mapper;
-	}
 
 	@Override
 	public ClienteResponseDTO crear(ClienteDTO dto) {
@@ -56,20 +55,7 @@ public class ClienteServiceImpl implements IClienteService {
                     return new NotFoundException(CLIENTE_NO_ENCONTRADO);
                 });
 
-		cliente.setNombre(
-				(dto.getNombre() != null && !dto.getNombre().isBlank()) ? dto.getNombre() : cliente.getNombre());
-        cliente.setGenero(
-        		(dto.getGenero() != null && !dto.getGenero().isBlank()) ? dto.getGenero() : cliente.getGenero());
-        cliente.setEdad(
-        		(dto.getEdad() != null ? dto.getEdad().toString() : cliente.getEdad()));
-        cliente.setDireccion(
-        		(dto.getDireccion() != null && !dto.getDireccion().isBlank()) ? dto.getDireccion() : cliente.getDireccion());
-        cliente.setTelefono(
-        		(dto.getTelefono() != null && !dto.getTelefono().isBlank()) ? dto.getTelefono() : cliente.getTelefono());
-        cliente.setContrasena(
-        		(dto.getContrasena() != null && !dto.getContrasena().isBlank()) ? dto.getContrasena() : cliente.getContrasena());
-        cliente.setEstado(
-        		(dto.getEstado() != null) ? dto.getEstado() : cliente.getEstado());
+        actualizarCampos(cliente, dto);
 
         Cliente actualizado = clienteRepository.save(cliente);
         log.info("Cliente actualizado con id: {}", actualizado.getId());
@@ -107,6 +93,32 @@ public class ClienteServiceImpl implements IClienteService {
         return mapper.toResponseDTO(cliente);
 	}
 
+	@Override
+	public List<ClienteBasicDTO> listarActivos() {
+		log.info("Consultando clientes activos");
+
+	    List<Object[]> resultados = clienteRepository.findClientesActivosNative();
+
+	    List<ClienteBasicDTO> clientes = resultados.stream()
+	            .map(obj -> new ClienteBasicDTO(
+	                    ((Number) obj[0]).longValue(),
+	                    (String) obj[1]
+	            ))
+	            .toList();
+
+	    log.info("Se encontraron {} clientes activos", clientes.size());
+
+	    return clientes;
+	}
 	
+	private void actualizarCampos(Cliente cliente, ClienteDTO dto) {
+        Optional.ofNullable(dto.getNombre()).filter(s -> !s.isBlank()).ifPresent(cliente::setNombre);
+        Optional.ofNullable(dto.getGenero()).filter(s -> !s.isBlank()).ifPresent(cliente::setGenero);
+        Optional.ofNullable(dto.getEdad()).ifPresent(edad -> cliente.setEdad(edad.toString()));
+        Optional.ofNullable(dto.getDireccion()).filter(s -> !s.isBlank()).ifPresent(cliente::setDireccion);
+        Optional.ofNullable(dto.getTelefono()).filter(s -> !s.isBlank()).ifPresent(cliente::setTelefono);
+        Optional.ofNullable(dto.getContrasena()).filter(s -> !s.isBlank()).ifPresent(cliente::setContrasena);
+        Optional.ofNullable(dto.getEstado()).ifPresent(cliente::setEstado);
+    }
 
 }

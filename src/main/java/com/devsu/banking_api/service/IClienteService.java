@@ -2,6 +2,7 @@ package com.devsu.banking_api.service;
 
 import java.util.List;
 
+import com.devsu.banking_api.dto.ClienteBasicDTO;
 import com.devsu.banking_api.dto.ClienteDTO;
 import com.devsu.banking_api.dto.ClienteResponseDTO;
 
@@ -45,5 +46,11 @@ public interface IClienteService {
 	 * @return ClienteResponseDTO
 	 */
 	ClienteResponseDTO obtenerPorId(Long id);
+	
+	/**
+	 * Listar clientes en estado activo
+	 * @return List
+	 */
+	List<ClienteBasicDTO> listarActivos();
 	
 }

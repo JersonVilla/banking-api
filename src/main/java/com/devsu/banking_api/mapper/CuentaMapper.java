@@ -17,6 +17,7 @@ public interface CuentaMapper {
 	@Mapping(target = "movimientos", ignore = true)
 	Cuenta toEntity(CuentaDTO dto);
 	
+	@Mapping(source = "cliente.id", target = "clienteId")
 	@Mapping(source = "cliente.nombre", target = "nombreCliente")
 	CuentaResponseDTO toResponseDTO(Cuenta cuenta);
 }

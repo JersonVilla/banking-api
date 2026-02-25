@@ -33,6 +33,7 @@ public class ReporteServiceImpl implements IReporteService {
 
     @Override
     public byte[] generarReporteMovimientos(List<MovimientoResponseDTO> movimientos) {
+    	log.info("Generando PDF para {} movimientos", movimientos.size());
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             Document document = new Document(PageSize.A4, 36, 36, 36, 36);
             PdfWriter.getInstance(document, baos);
@@ -45,46 +46,51 @@ public class ReporteServiceImpl implements IReporteService {
             document.add(titulo);
             document.add(Chunk.NEWLINE);
             
-            PdfPTable table = new PdfPTable(8);
+            String[] headers = {"Cliente", "Número Cuenta", "Tipo Cuenta", "Saldo Inicial", 
+                    "Tipo movimiento", "Movimiento", "Saldo Disponible", "Fecha"};
+            
+            PdfPTable table = new PdfPTable(headers.length);
             table.setWidthPercentage(100);
             table.setWidths(new float[]{3, 2, 2, 2, 2, 2, 2, 3});
 
             log.info("Encabezados reporte");
-            addTableHeader(table, "Cliente");
-            addTableHeader(table, "Número Cuenta");
-            addTableHeader(table, "Tipo Cuenta");
-            addTableHeader(table, "Saldo Inicial");
-            addTableHeader(table, "Tipo movimiento");
-            addTableHeader(table, "Movimiento");
-            addTableHeader(table, "Saldo Disponible");
-            addTableHeader(table, "Fecha");
+            for (String h: headers) {
+            	table.addCell(createHeaderCell(h));
+            }
             
             for (MovimientoResponseDTO m : movimientos) {
-                table.addCell(m.getCliente());
-                table.addCell(m.getNumeroCuenta());
-                table.addCell(m.getTipoCuenta());
-                table.addCell(MONEDA_FORMAT.format(m.getSaldoInicial()));
-                table.addCell(m.getTipoMovimiento());
-                table.addCell(MONEDA_FORMAT.format(m.getMovimiento()));
-                table.addCell(MONEDA_FORMAT.format(m.getSaldoDisponible()));
-                table.addCell(m.getFecha().format(FECHA_FORMAT));
+                table.addCell(createDataCell(m.getCliente(), Element.ALIGN_LEFT));
+                table.addCell(createDataCell(m.getNumeroCuenta(), Element.ALIGN_CENTER));
+                table.addCell(createDataCell(m.getTipoCuenta(), Element.ALIGN_CENTER));
+                table.addCell(createDataCell(MONEDA_FORMAT.format(m.getSaldoInicial()), Element.ALIGN_RIGHT));
+                table.addCell(createDataCell(m.getTipoMovimiento(), Element.ALIGN_CENTER));
+                table.addCell(createDataCell(MONEDA_FORMAT.format(m.getMovimiento()), Element.ALIGN_RIGHT));
+                table.addCell(createDataCell(MONEDA_FORMAT.format(m.getSaldoDisponible()), Element.ALIGN_RIGHT));
+                table.addCell(createDataCell(m.getFecha().format(FECHA_FORMAT), Element.ALIGN_CENTER));
             }
 
             document.add(table);
             document.close();
 
+            log.info("PDF generado correctamente");
             return baos.toByteArray();
         } catch (Exception e) {
+        	log.error("Error generando PDF", e);
             throw new GeneralException("Error generando PDF");
         }
     }
 
-    private void addTableHeader(PdfPTable table, String headerTitle) {
-        PdfPCell header = new PdfPCell();
-        header.setBackgroundColor(BaseColor.LIGHT_GRAY);
-        header.setPhrase(new Phrase(headerTitle, FontFactory.getFont(FontFactory.HELVETICA_BOLD)));
-        header.setHorizontalAlignment(Element.ALIGN_CENTER);
-        table.addCell(header);
+    private PdfPCell createHeaderCell(String title) {
+        PdfPCell cell = new PdfPCell(new Phrase(title, FontFactory.getFont(FontFactory.HELVETICA_BOLD)));
+        cell.setBackgroundColor(BaseColor.LIGHT_GRAY);
+        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        return cell;
+    }
+    
+    private PdfPCell createDataCell(String value, int align) {
+        PdfPCell cell = new PdfPCell(new Phrase(value, FontFactory.getFont(FontFactory.HELVETICA, 10)));
+        cell.setHorizontalAlignment(align);
+        return cell;
     }
 
 }

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.devsu.banking_api.dto.ClienteBasicDTO;
 import com.devsu.banking_api.dto.ClienteDTO;
 import com.devsu.banking_api.dto.ClienteResponseDTO;
 import com.devsu.banking_api.service.IClienteService;
@@ -61,6 +62,12 @@ public class ClienteController {
 		log.info("Solicitud DELETE /clientes/{}", id);
 		clienteService.eliminar(id);
 		return ResponseEntity.noContent().build();
+	}
+	
+	@GetMapping("/activos")
+	public ResponseEntity<List<ClienteBasicDTO>> listarActivos() {
+	    log.info("Solicitud GET /clientes/activos");
+	    return ResponseEntity.ok(clienteService.listarActivos());
 	}
 	
 }

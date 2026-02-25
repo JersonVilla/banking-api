@@ -62,4 +62,10 @@ public class CuentaController {
         return ResponseEntity.noContent().build();
     }
     
+    @GetMapping("/activas")
+    public ResponseEntity<List<CuentaDTO>> obtenerCuentasActivas() {
+        List<CuentaDTO> cuentas = cuentaService.getCuentasActivas();
+        return ResponseEntity.ok(cuentas);
+    }
+    
 }

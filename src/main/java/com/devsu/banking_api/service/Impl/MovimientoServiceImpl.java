@@ -18,10 +18,12 @@ import com.devsu.banking_api.model.repository.CuentaRepository;
 import com.devsu.banking_api.model.repository.MovimientoRepository;
 import com.devsu.banking_api.service.ImovimientoService;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class MovimientoServiceImpl implements ImovimientoService {
 
 	private final MovimientoRepository movimientoRepository;
@@ -37,45 +39,39 @@ public class MovimientoServiceImpl implements ImovimientoService {
     private static final String SALDO_NO_DISPONIBLE = "Saldo no disponible";
     
     private static final BigDecimal LIMITE_DIARIO = BigDecimal.valueOf(1000);
-	
-	public MovimientoServiceImpl(MovimientoRepository movimientoRepository, CuentaRepository cuentaRepository, MovimientoMapper mapper) {
-		this.movimientoRepository = movimientoRepository;
-		this.cuentaRepository = cuentaRepository;
-		this.mapper = mapper;
-	}
 
 	@Override
 	public MovimientoResponseDTO crear(MovimientoDTO dto) {
-		log.info("Creando movimiento para cuenta {}", dto.getNumeroCuenta());
+		log.info("Creando movimiento para cuenta {} tipo: {} valor: {}", dto.getNumeroCuenta(), dto.getTipoMovimiento(), dto.getValor());
 
 		Cuenta cuenta = obtenerCuenta(dto.getNumeroCuenta());
+		
+        BigDecimal nuevoSaldo = calcularSaldo(cuenta, dto.getTipoMovimiento(), dto.getValor());
 
-		BigDecimal valorMovimiento = dto.getValor();
-        BigDecimal nuevoSaldo = calcularSaldo(cuenta, dto.getTipoMovimiento(), valorMovimiento);
+        Movimiento movimiento = guardarMovimiento(cuenta, dto.getTipoMovimiento(), dto.getValor(), nuevoSaldo);
 
-        Movimiento movimiento = guardarMovimiento(cuenta, dto.getTipoMovimiento(), valorMovimiento, nuevoSaldo);
+        cuenta.setSaldoInicial(nuevoSaldo);
+        cuentaRepository.save(cuenta);
 
-        actualizarSaldoCuenta(cuenta, nuevoSaldo);
-
-	    return construirResponse(cuenta, movimiento, valorMovimiento, nuevoSaldo);
+        log.info("Movimiento creado para cuenta {}. Saldo nuevo: {}", cuenta.getNumeroCuenta(), nuevoSaldo);
+	    return construirResponse(cuenta, movimiento, dto.getValor(), nuevoSaldo);
     }
 	
 	@Override
 	public List<MovimientoResponseDTO> listar() {
-		log.info("Listando todos los clientes");
-        return movimientoRepository.findAll()
-                .stream()
+		List<Movimiento> movimientos = movimientoRepository.findAll();
+        log.info("Listando {} movimientos", movimientos.size());
+        return movimientos.stream()
                 .map(mapper::toDTO)
                 .collect(Collectors.toList());
 	}
     
 	@Override
 	public List<MovimientoResponseDTO> listarMovimientosPorCuenta(String numeroCuenta) {
-		log.info("Listando movimientos de la cuenta: {}", numeroCuenta);
-        Cuenta cuenta = obtenerCuenta(numeroCuenta);
-
-        return movimientoRepository.findByCuenta(cuenta)
-                .stream()
+		Cuenta cuenta = obtenerCuenta(numeroCuenta);
+        List<Movimiento> movimientos = movimientoRepository.findByCuenta(cuenta);
+        log.info("Movimientos encontrados para cuenta {}: {}", numeroCuenta, movimientos.size());
+        return movimientos.stream()
                 .map(mapper::toDTO)
                 .collect(Collectors.toList());
 	}
@@ -83,11 +79,10 @@ public class MovimientoServiceImpl implements ImovimientoService {
 	@Override
 	public List<MovimientoResponseDTO> listarMovimientosPorCuentaYFecha(String numeroCuenta, LocalDateTime inicio,
 			LocalDateTime fin) {
-		log.info("Listando movimientos de la cuenta {} entre {} y {}", numeroCuenta, inicio, fin);
-        Cuenta cuenta = obtenerCuenta(numeroCuenta);
-
-        return movimientoRepository.findByCuentaAndFechaBetween(cuenta, inicio, fin)
-                .stream()
+		Cuenta cuenta = obtenerCuenta(numeroCuenta);
+        List<Movimiento> movimientos = movimientoRepository.findByCuentaAndFechaBetween(cuenta, inicio, fin);
+        log.info("Movimientos encontrados para cuenta {} entre {} y {}: {}", numeroCuenta, inicio, fin, movimientos.size());
+        return movimientos.stream()
                 .map(mapper::toDTO)
                 .collect(Collectors.toList());
 	}
@@ -126,11 +121,6 @@ public class MovimientoServiceImpl implements ImovimientoService {
                 .fecha(LocalDateTime.now())
                 .build();
         return movimientoRepository.save(movimiento);
-    }
-
-    private void actualizarSaldoCuenta(Cuenta cuenta, BigDecimal nuevoSaldo) {
-        cuenta.setSaldoInicial(nuevoSaldo);
-        cuentaRepository.save(cuenta);
     }
     
     private MovimientoResponseDTO construirResponse(Cuenta cuenta, Movimiento movimiento, BigDecimal valorMovimiento, BigDecimal nuevoSaldo) {
